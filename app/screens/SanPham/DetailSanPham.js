@@ -1,15 +1,16 @@
-import React, { useState,useContext } from 'react';
+import React, { useState,useContext,useEffect } from 'react';
 import { StyleSheet, Text, View, Image, TextInput, TouchableOpacity, FlatList, Alert } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
 import { color } from './ListSanPham';
-import SanPham from './SanPhamLienQuan';
 import { CartContext } from '../Home/CartContext';
+import { API_BASE_URL } from '@env';
+import SanPham from './SanPhamLienQuan';
 
 const DetailSanPham = ({ route,navigation }) => {
   const { sanPham } = route.params;
   const [quantity, setQuantity] = useState(1);
   const [cart, setCart] = useState([]);
-
+  const [relatedProducts, setRelatedProducts] = useState([]);
   // const { addToCart } = useContext(CartContext);
   const handleAddToCart = () => {
     const newProduct = { ...sanPham, quantity };
@@ -22,22 +23,29 @@ const DetailSanPham = ({ route,navigation }) => {
         { text: "Tiếp tục mua hàng", onPress: () => console.log("Tiếp tục mua hàng") },
         { text: "Xem giỏ hàng", onPress: () => navigation.navigate('Cart') }
       ]
-    );
+    );``
   };
-
-  // Tạo danh sách dữ liệu cho FlatList
+  const formatPrice = (price) => {
+    return price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".") + " VND";
+  };
   const data = [
-    { key: 'image', content: <Image source={sanPham.image} style={styles.image} /> },
-    { key: 'title', content: <Text style={styles.title}>{sanPham.name}</Text> },
-    { key: 'info', content: <Text style={styles.info}>{sanPham.information}</Text> },
-    { key: 'price', content: <Text style={styles.price}>{sanPham.price}</Text> },
+    { key: 'image', content: 
+      <Image
+              source={{ uri: `${API_BASE_URL}/public/products/image/${sanPham.image}` }}
+              style={styles.image}
+              onError={() => setError("Không thể tải hình ảnh")}
+            />
+  },
+    { key: 'title', content: <Text style={styles.title}>{sanPham.productName}</Text> },
+    { key: 'info', content: <Text style={styles.info}>{sanPham.description}</Text> },
+    { key: 'price', content: <Text style={styles.price}>{formatPrice(sanPham.specialPrice)}</Text> },
     {
       key: 'color',
       content: (
         <View>
           <Text style={styles.color}>
-            Màu sắc: {sanPham.color} | 
-            <Text style={styles.rating}>{sanPham.rating}
+            Màu sắc: Đen xám | 
+            <Text style={styles.rating}> {sanPham.rating}
               <FontAwesome name="star" size={16} color={color.COLOR_PRIMARY} />
             </Text>
           </Text>
@@ -120,7 +128,7 @@ const DetailSanPham = ({ route,navigation }) => {
       content: (
         <View style={{ marginTop: 10 }}>
           <Text style={{ fontSize: 22, fontWeight: 'bold' }}>Sản phẩm tương tự</Text>
-          <SanPham />
+          <SanPham/>
         </View>
       )
     }
@@ -154,11 +162,11 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   image: {
-    width: '100%',
-    height: 300,
-    borderRadius: 10,
-    marginBottom: 20,
-    resizeMode: 'cover',
+    width: '100%', // Đặt chiều rộng bằng 100% của container
+    height: 300, // Đặt chiều cao cố định là 300
+    borderRadius: 10, // Bo tròn các góc
+    marginBottom: 20, // Khoảng cách dưới ảnh
+    resizeMode: 'contain',
   },
   title: {
     fontSize: 24,

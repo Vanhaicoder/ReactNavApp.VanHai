@@ -38,11 +38,11 @@ const styles = StyleSheet.create({
     // marginBottom: 20, // Khoảng cách dưới banner
   },
   wrapper: {
-    height: 200, // Chiều cao của swiper (banner)
+    height: 250, // Chiều cao của swiper (banner)
   },
   banner: {
     width: width - 20, // Chiều rộng banner trừ padding hai bên
-    height: 200, // Chiều cao của banner
+    height: 250, // Chiều cao của banner
     justifyContent: 'center',
     alignItems: 'center',
     overflow: 'hidden', // Đảm bảo ảnh không vượt quá biên
@@ -63,6 +63,6 @@ const styles = StyleSheet.create({
     marginHorizontal: 3,
   },
   paginationStyle: {
-    // bottom: 10, // Đặt vị trí pagination ở phía trong của slider (cách đáy slider 10px)
+    bottom: 10, // Đặt vị trí pagination ở phía trong của slider (cách đáy slider 10px)
   },
 });

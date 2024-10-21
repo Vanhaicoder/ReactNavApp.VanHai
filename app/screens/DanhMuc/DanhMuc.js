@@ -1,39 +1,65 @@
 import { StyleSheet, Text, View, TouchableOpacity } from 'react-native';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ScrollView } from 'react-native-gesture-handler';
-import { categories, color } from './listdanhmuc';
+import { dataProvider } from '../../api/DataProvide'; 
+import { color } from './listdanhmuc'; 
 
-const DanhMuc = () => {
-  const [selectedCategory, setSelectedCategory] = useState(0); 
+const DanhMuc = ({ onCategorySelect }) => { // Nhận hàm callback từ props
+  const [selectedCategory, setSelectedCategory] = useState(null); // Cập nhật thành null
+  const [categories, setCategories] = useState([]); 
+  const [loading, setLoading] = useState(true); 
+
+  // Hàm gọi danh sách danh mục từ API
+  const fetchCategories = async () => {
+    try {
+      const data = await dataProvider.getCategories();
+      console.log("Dữ liệu danh mục:", data); 
+      setCategories(data.content); 
+    } finally {
+      setLoading(false); 
+    }
+  };
+
+  useEffect(() => {
+    fetchCategories();
+  }, []);
 
   // Hàm bấm vào danh mục
   const handlePress = (index) => {
-    setSelectedCategory(index); 
-    console.log(`Bạn đã bấm vào danh mục: ${categories[index].category}`);
-    // thao tác
+    const category = categories[index]; // Lấy danh mục được chọn
+    setSelectedCategory(category.categoryId); // Cập nhật selectedCategory
+    onCategorySelect(category.categoryId); // Gọi hàm callback
+    console.log(`Bạn đã bấm vào danh mục: ${category.categoryName}`); 
   };
+  
+  if (loading) {
+    return <Text>Đang tải danh mục...</Text>;
+  }
 
   return (
     <View>
       <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-        {categories.map((category, index) => {
-          return (
-            <TouchableOpacity
-              key={index}
-              style={[
-                styles.categoryContainer,
-                { 
-                  backgroundColor: selectedCategory === index ? color.COLOR_PRIMARY : color.COLOR_LIGHT 
-                }
-              ]}
-              onPress={() => handlePress(index)} // Gọi hàm khi bấm vào danh mục
-            >
-              <Text style={[styles.categoryText, { color: selectedCategory === index ? color.COLOR_LIGHT : '#000' }]}>
-                {category.category}
-              </Text>
-            </TouchableOpacity>
-          );
-        })}
+        {Array.isArray(categories) && categories.length > 0 ? ( 
+          categories.map((category, index) => {
+            return (
+              <TouchableOpacity
+                key={index}
+                style={[styles.categoryContainer,
+                  { 
+                    backgroundColor: selectedCategory === category.categoryId ? color.COLOR_PRIMARY : color.COLOR_LIGHT 
+                  }
+                ]}
+                onPress={() => handlePress(index)} 
+              >
+                <Text style={[styles.categoryText, { color: selectedCategory === category.categoryId ? color.COLOR_LIGHT : '#000' }]}>
+                  {category.categoryName} 
+                </Text>
+              </TouchableOpacity>
+            );
+          })
+        ) : (
+          <Text>Không có danh mục nào.</Text> 
+        )}
       </ScrollView>
     </View>
   );

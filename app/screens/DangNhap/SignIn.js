@@ -1,54 +1,61 @@
-import { StyleSheet, Text, View,Button, TextInput,Image } from 'react-native'
-import React ,{useState}from 'react'
+import React, { useState } from 'react';
+import { StyleSheet, Text, View, Button, TextInput, Alert, KeyboardAvoidingView, Platform, TouchableOpacity } from 'react-native';
+import { authProvider } from '../../api/AuthProvide'; 
 
 import styles from './signIn.style';
+import { ImageBackground } from 'react-native-web';
 
 const SignIn = ({ navigation }) => {
-    const [username, setUsername] = useState('');
-    const [password, setPassword] = useState('');
+  const [username, setUsername] = useState('');  
+  const [password, setPassword] = useState('');  
 
-const handleSignIn = () => {
-  //hàm xử lí
-    navigation.replace("Home")
-}
-const handleSignUp = () => {
-  //hàm xử lí
-    navigation.replace("SignUp")
-}
+  const handleSignIn = async () => {
+    try {
+      await authProvider.login({ username, password });
+      navigation.replace("Home");
+    } catch (error) {
+      Alert.alert("Lỗi", error.message);
+    }
+  };
 
+  const handleSignUp = () => {
+    navigation.replace("SignUp");
+  };
 
   return (
-    <View style={styles.container}>
-        {/* <Image source={require("../../../assets/images/slide1.jpg")} resizeMode='cover' style={{width: 450, height: 200}} /> */}
-        <Image source={require("../../../assets/images/1.jpg")} resizeMode='cover' style={{width: 400, height: 250,marginBottom:30}} />
-        <Text style={{fontWeight:'bold', fontSize:30,color:'black',marginBottom:30}}>Đăng nhập</Text>
-        <View style={styles.view}>
-              <TextInput style={styles.input}
-              placeholder="Email"
-              value={username}
-              onChangeText={setUsername}
-            />
-            
-            <TextInput style={styles.input}
-              placeholder="Mật khẩu"
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry
-            />
-            <Button
-              onPress={()=>handleSignIn()}
-              title='Đăng nhập'
-            />
-        </View>
-        <View style={{}}>
-        <Button style={{color:'white'}}
-              onPress={()=>handleSignUp()}
-              title='Bạn chưa có tài khoản ? '
-            />
-        </View>
-    
-    </View>
-    
-)}
+    // <ImageBackground 
+    //   source={require('../../../assets/images/back.png')} // Thay thế bằng đường dẫn hình ảnh của bạn     
+    // >
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    >
+      
+      <Text style={styles.title}>Đăng nhập</Text>
+      <View style={styles.view}>
+        <TextInput
+          style={styles.input}
+          placeholder="Email"
+          value={username}
+          onChangeText={setUsername}
+        />
+        <TextInput
+          style={styles.input}
+          placeholder="Mật khẩu"
+          value={password}
+          onChangeText={setPassword}
+          secureTextEntry
+        />
+        <TouchableOpacity style={styles.button} onPress={handleSignIn}>
+          <Text style={styles.buttonText}>Đăng nhập</Text>
+        </TouchableOpacity>
+      </View>
+      <TouchableOpacity style={styles.signupButton} onPress={handleSignUp}>
+        <Text style={{ color: '#007bff' }}>Bạn chưa có tài khoản ?</Text>
+      </TouchableOpacity>
+    </KeyboardAvoidingView>
 
-export default SignIn
+  );
+};
+
+export default SignIn;

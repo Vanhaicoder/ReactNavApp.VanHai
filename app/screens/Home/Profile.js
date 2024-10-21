@@ -1,18 +1,23 @@
-import * as React from 'react';
-import { View, useWindowDimensions, Text, StyleSheet, TextInput, Button, Image, Picker,FlatList } from 'react-native';
+import * as React  from 'react';
+import { View, useWindowDimensions, Text, StyleSheet, TextInput, Button, Image, Picker,FlatList,ScrollView ,Alert} from 'react-native';
 import { TabView, SceneMap } from 'react-native-tab-view';
 import { useNavigation } from '@react-navigation/native';
 import { color } from '../SanPham/ListSanPham';
 import SanPham from '../SanPham/SanPhamLienQuan';
-const accountData = {
-  avatar: require('../../../assets/images/avt.jpg'),
-  ten: 'Van Hai',
-  email: 'vanhai@gmail.com',
-  diachi: '8/15/15 đường 147, Phước Long B, Quận 9',
-  thanhpho: 'Hcm',
-  sdt: '0981487674',
-  gioitinh: 'Nam',
-};
+import axios from 'axios';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { authProvider } from '../../api/AuthProvide'; 
+import { API_BASE_URL } from '@env';
+import Swal from 'sweetalert2';
+// const accountData = {
+//   avatar: require('../../../assets/images/avt.jpg'),
+//   ten: 'Van Hai',
+//   email: 'vanhai@gmail.com',
+//   diachi: '8/15/15 đường 147, Phước Long B, Quận 9',
+//   thanhpho: 'Hcm',
+//   sdt: '0981487674',
+//   gioitinh: 'Nam',  
+// };
 const notifications = [
   { id: '1', title: 'Khuyến mãi', description: 'Đại hạ giá, sale toàn cầu!', count: 18 },
   { id: '2', title: 'Live & Video', description: 'Săn mã 50k đơn 0đ', count: 13 },
@@ -31,95 +36,171 @@ const NotificationItem = ({ title, description, count }) => (
     </View>
   </View>
 );
-const FirstRoute = ({}) => {
+const FirstRoute = () => {
+  const [userInfo, setUserInfo] = React.useState(null);
   const [isEditing, setIsEditing] = React.useState(false);
-  const [formData, setFormData] = React.useState(accountData);
   const navigation = useNavigation();
 
+  React.useEffect(() => {
+    const loadUserInfo = async () => {
+      const userData = await AsyncStorage.getItem("userInfo");
+      if (userData) {
+        setUserInfo(JSON.parse(userData));
+      }
+    };
+
+    loadUserInfo();
+  }, []);
+
   const handleInputChange = (key, value) => {
-    setFormData({ ...formData, [key]: value });
+    if (key === 'address') {
+      setUserInfo({
+        ...userInfo,
+        address: { ...userInfo.address, ...value }, // Cập nhật địa chỉ
+      });
+    } else {
+      setUserInfo({ ...userInfo, [key]: value });
+    }
   };
+
+  if (!userInfo) return <Text>Loading...</Text>; // Hiển thị loading trong lúc lấy dữ liệu
+  // const updateUserInfo = async () => {
+  //   try {
+  //     const token = await AsyncStorage.getItem("jwt-token");
+  //     const response = await axios.put(`${API_BASE_URL}/public/users`, userInfo, {
+  //       headers: {
+  //         Authorization: `Bearer ${token}`,
+  //         'Content-Type': 'application/json',
+  //       },
+  //     });
+
+  //     console.log("Cập nhật thành công:", response.data);
+  //     // Bạn có thể cập nhật lại thông tin người dùng sau khi cập nhật thành công
+  //     await AsyncStorage.setItem("userInfo", JSON.stringify(userInfo));
+  //   } catch (error) {
+  //     console.error("Cập nhật không thành công:", error);
+  //   }
+  // };
+
   const handleSwitchAccount = () => {
     navigation.navigate('SignIn');  
   };
 
-  const handleLogout = () => {
-    
-    navigation.navigate('SignIn');  
-  };
-
+  const handleLogout = async () => {
+    Alert.alert(
+        "Xác nhận",
+        "Bạn có chắc chắn muốn đăng xuất không?",
+        [
+            {
+                text: "Hủy",
+                style: "cancel",
+            },
+            {
+                text: "Đồng ý",
+                onPress: async () => {
+                    try {
+                        await authProvider.logout();
+                        Alert.alert("Đăng xuất thành công!");
+                        navigation.navigate('SignIn');
+                    } catch (error) {
+                        console.error('Đăng xuất không thành công:', error);
+                    }
+                },
+            },
+        ]
+    ); 
+};
   return (
-    <View style={styles.container}>
-      <Image source={formData.avatar} style={styles.avatar} />
-      <View style={styles.row}>
+    <ScrollView style={styles.container}>
+      <Image source={userInfo.avatar ? { uri: userInfo.avatar } : require('../../../assets/images/avt.jpg')} style={styles.avatar} />
+      <View style={styles.inputRow}>
         <View style={styles.flex1}>
-          <Text style={styles.label}>Tên khách hàng</Text>
+          <Text style={styles.label}>Họ</Text>
           <TextInput
             style={styles.input}
-            value={formData.ten}
+            value={userInfo.firstName}
             editable={isEditing}
-            onChangeText={(value) => handleInputChange('ten', value)}
+            onChangeText={(value) => handleInputChange('firstName', value)}
           />
         </View>
         <View style={styles.flex1}>
-          <Text style={styles.label}>Giới tính</Text>
+          <Text style={styles.label}>Tên</Text>
           <TextInput
             style={styles.input}
-            value={formData.gioitinh}
+            value={userInfo.lastName}
             editable={isEditing}
-            onChangeText={(value) => handleInputChange('gioitinh', value)}
+            onChangeText={(value) => handleInputChange('lastName', value)}
           />
         </View>
       </View>
-
       <Text style={styles.label}>Email</Text>
       <TextInput
         style={styles.input}
-        value={formData.email}
+        value={userInfo.email}
         editable={isEditing}
         onChangeText={(value) => handleInputChange('email', value)}
       />
-
-      <Text style={styles.label}>Địa chỉ</Text>
-      <TextInput
-        style={styles.input}
-        value={formData.diachi}
-        editable={isEditing}
-        onChangeText={(value) => handleInputChange('diachi', value)}
-      />
-
-      <Text style={styles.label}>Thành phố</Text>
-      <TextInput
-        style={styles.input}
-        value={formData.thanhpho}
-        editable={isEditing}
-        onChangeText={(value) => handleInputChange('thanhpho', value)}
-      />
-
       <Text style={styles.label}>Số điện thoại</Text>
       <TextInput
         style={styles.input}
-        value={formData.sdt}
+        value={userInfo.mobileNumber}
         editable={isEditing}
-        onChangeText={(value) => handleInputChange('sdt', value)}
+        onChangeText={(value) => handleInputChange('mobileNumber', value)}
       />
-
-      <Button title={isEditing ? "Lưu" : "Chỉnh sửa"} onPress={() => setIsEditing(!isEditing)} />
-      <View style={styles.buttonRow}>
-        <Button
-          onPress={handleSwitchAccount}
-          title='Đổi tài khoản'
-          // style={{}}
-        />
-        <Button
-          title='Đăng xuất'
-          onPress={handleLogout}
-        />
+      <Text style={styles.label}>Đường</Text>
+      <TextInput
+        style={styles.input}
+        value={userInfo.address ? `${userInfo.address.street}` : ''} 
+        editable={isEditing}
+        onChangeText={(value) => handleInputChange('address', { street: value })} 
+      />
+      <Text style={styles.label}>Thành Phố</Text>
+      <TextInput
+        style={styles.input}
+        value={userInfo.address ? `${userInfo.address.city}` : ''} 
+        editable={isEditing}
+        onChangeText={(value) => handleInputChange('address', { street: city })} 
+      />
+      <View style={styles.inputRow}>
+        <View style={styles.flex1}>
+          <Text style={styles.label}>Tỉnh</Text>
+          <TextInput
+            style={styles.input}
+            value={userInfo.address ? `${userInfo.address.state}` : ''} 
+            editable={isEditing}
+            onChangeText={(value) => handleInputChange('address', { state: value })} 
+          />
+        </View>
+        <View style={styles.flex1}>
+          <Text style={styles.label}>Mã bưu chính</Text>
+          <TextInput
+            style={styles.input}
+            value={userInfo.address ? `${userInfo.address.pincode}` : ''} 
+            editable={isEditing}
+            onChangeText={(value) => handleInputChange('address', { pincode: value })} 
+          />
+        </View>
       </View>
-    </View>
+      {/* <Text style={styles.label}>Quốc gia</Text>
+      <TextInput
+        style={styles.input}
+        value={userInfo.address ? `${userInfo.address.country}` : ''} 
+        editable={isEditing}
+        onChangeText={(value) => handleInputChange('address', { country: value })} 
+      /> */}
+      <View style={styles.buttonRow}>
+      <Button title={isEditing ? "Lưu" : "Chỉnh sửa"} onPress={() => { 
+            if (isEditing) {
+              // updateUserInfo(); // Gọi hàm cập nhật thông tin
+            }
+            setIsEditing(!isEditing);
+          }} 
+        />
+        <Button title='Đăng xuất' onPress={handleLogout} />
+      </View>
+    </ScrollView>
   );
 };
-
 const SecondRoute = () => (
   <View style={{ flex: 1, backgroundColor: '#fff' }}>
     <View style={{ marginTop: 10 }}>
@@ -172,7 +253,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
-    backgroundColor: '#fff',
+    backgroundColor: '#f5f5f5',
   },
   avatar: {
     width: 100,
@@ -191,31 +272,24 @@ const styles = StyleSheet.create({
     borderColor: '#ccc',
     borderWidth: 1,
     borderRadius: 5,
-    marginBottom: 15,
+    marginBottom: 7,
     paddingHorizontal: 10,
     backgroundColor: '#f9f9f9',
   },
-  row: {
+  inputRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 15,
+    marginBottom: 5,
   },
   flex1: {
     flex: 1,
     marginRight: 10,
   },
-  picker: {
-    height: 40,
-    borderColor: '#ccc',
-    borderWidth: 1,
-    borderRadius: 5,
-    backgroundColor: '#f9f9f9',
+  buttonRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 20,
   },
-  // buttonRow: {
-  //   // flexDirection: 'row',
-    
-  //   marginTop: 20,
-  // },
   container: {
     flex: 1,
     padding: 20,
