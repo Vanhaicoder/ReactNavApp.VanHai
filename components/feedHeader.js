@@ -15,7 +15,7 @@ const FeedHeader = ({ feedText, feedIcon, notificationCount }) => {
       
       <View style={{ position: 'relative' }}>
         <TouchableOpacity onPress={handleBellPress}>
-          <FontAwesome name={feedIcon} size={24} color="red" />
+          <FontAwesome name={feedIcon} size={24}  />
         </TouchableOpacity>
         
         {/* Tạo badge với số thông báo */}

@@ -10,6 +10,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const Feed = ({ navigation }) => {
   const [lastName, setLastName] = useState('');
+  const [firstName, setFirstName] = useState('');
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true); // Thêm trạng thái loading
   const [selectedCategory, setSelectedCategory] = useState(null);
@@ -20,6 +21,7 @@ const Feed = ({ navigation }) => {
       if (userInfo) {
         const user = JSON.parse(userInfo);
         setLastName(user.lastName || 'Người dùng'); // Kiểm tra lastName
+        setFirstName(user.firstName || 'Người dùng')
       }
     } catch (error) {
       console.error("Lỗi khi lấy thông tin người dùng:", error);
@@ -60,7 +62,7 @@ const Feed = ({ navigation }) => {
 
   return (
     <SafeAreaView style={{ flex: 1, marginHorizontal: 16 }}>
-      <FeedHeader feedText={`Hello, ${lastName}`} feedIcon={"bell-o"} notificationCount={3} />
+      <FeedHeader feedText={`Chào, ${lastName}`} feedIcon={"user"} notificationCount={0} />
       <TimKiem icon="search" placeholder={"nhập sản phẩm muốn tìm"} />
       <FlatList
         data={data}

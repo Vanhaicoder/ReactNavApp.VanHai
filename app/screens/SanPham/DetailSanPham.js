@@ -2,29 +2,44 @@ import React, { useState,useContext,useEffect } from 'react';
 import { StyleSheet, Text, View, Image, TextInput, TouchableOpacity, FlatList, Alert } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
 import { color } from './ListSanPham';
-import { CartContext } from '../Home/CartContext';
 import { API_BASE_URL } from '@env';
-import SanPham from './SanPhamLienQuan';
+import SanPham from './SanPham';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { dataProvider } from '../../api/DataProvide';
+// import SanPham from './SanPhamLienQuan';
 
 const DetailSanPham = ({ route,navigation }) => {
   const { sanPham } = route.params;
   const [quantity, setQuantity] = useState(1);
-  const [cart, setCart] = useState([]);
   const [relatedProducts, setRelatedProducts] = useState([]);
-  // const { addToCart } = useContext(CartContext);
-  const handleAddToCart = () => {
-    const newProduct = { ...sanPham, quantity };
-    setCart([...cart, newProduct]);
 
-    Alert.alert(
-      "Thành công!",
-      `${quantity} sản phẩm đã được thêm vào giỏ hàng!`,
-      [
-        { text: "Tiếp tục mua hàng", onPress: () => console.log("Tiếp tục mua hàng") },
-        { text: "Xem giỏ hàng", onPress: () => navigation.navigate('Cart') }
-      ]
-    );``
+  if (!sanPham) {
+    return (
+      <View style={styles.container}>
+        <Text>Không tìm thấy sản phẩm.</Text>
+      </View>
+    );
+  }
+  
+  const handleAddToCart = async () => {
+    try {
+      const cartId = await AsyncStorage.getItem("cartId");
+      if (!cartId) {
+        Alert.alert("Lỗi", "Giỏ hàng không tồn tại. Vui lòng đăng nhập lại.");
+        return;
+      }
+
+      const productId = sanPham.productId;
+      await dataProvider.addProductToCart(cartId, productId, quantity);
+      Alert.alert("Thành công", "Sản phẩm đã được thêm vào giỏ hàng.");
+      navigation.navigate("Cart", { refresh: true });
+    } catch (error) {
+      console.error("Không thể thêm sản phẩm vào giỏ hàng:", error);
+      Alert.alert("Thông báo", "Sản phẩm đang tạm hết. Xin lỗi vì sự bất tiện này!.");
+    }
   };
+
+  
   const formatPrice = (price) => {
     return price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".") + " VND";
   };
@@ -33,7 +48,7 @@ const DetailSanPham = ({ route,navigation }) => {
       <Image
               source={{ uri: `${API_BASE_URL}/public/products/image/${sanPham.image}` }}
               style={styles.image}
-              onError={() => setError("Không thể tải hình ảnh")}
+              // onError={() => setError("Không thể tải hình ảnh")}
             />
   },
     { key: 'title', content: <Text style={styles.title}>{sanPham.productName}</Text> },
@@ -128,7 +143,7 @@ const DetailSanPham = ({ route,navigation }) => {
       content: (
         <View style={{ marginTop: 10 }}>
           <Text style={{ fontSize: 22, fontWeight: 'bold' }}>Sản phẩm tương tự</Text>
-          <SanPham/>
+          {/* <SanPham/> */}
         </View>
       )
     }
@@ -143,9 +158,10 @@ const DetailSanPham = ({ route,navigation }) => {
         contentContainerStyle={styles.contentContainer}
       />
       <View style={styles.fixedButtonContainer}>
-        <TouchableOpacity style={styles.addButton} onPress={handleAddToCart}>
-          <Text style={styles.addButtonText}>Thêm vào giỏ hàng</Text>
-        </TouchableOpacity>
+      <TouchableOpacity style={styles.addButton} onPress={() => handleAddToCart()}>
+    <Text style={styles.addButtonText}>Thêm vào giỏ hàng</Text>
+    </TouchableOpacity>
+
       </View>
     </View>
   );

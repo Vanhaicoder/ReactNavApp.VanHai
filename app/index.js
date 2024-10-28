@@ -2,7 +2,7 @@ import 'react-native-gesture-handler';
 
 import * as React from 'react';
 import { Button, View, Text } from 'react-native';
-import { CartProvider } from './screens/Home/CartContext';
+// import { CartProvider } from './screens/Home/CartContext';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import SignUp from './screens/DangNhap/SignUp';
@@ -14,6 +14,8 @@ import DetailSanPham from './screens/SanPham/DetailSanPham';
 import Payment from './screens/Home/Payment';
 import Carts from './screens/Home/Cart';
 import Notifications from './screens/Home/Notifications';
+import PaymentScreen from './screens/Home/Payment';
+import SuccessScreen from './screens/Home/ThanhToanThanhCong';
 // import {MyTabs} from './screens/Home/MyTab';
 import SecondRoute from './screens/Home/Profile';
 // import FirstPage from './pages/FirstPage';
@@ -24,8 +26,6 @@ const Stack = createStackNavigator();
 
 function App() {
   return (
-
-
     <Stack.Navigator initialRouteName="Getstart">
       <Stack.Screen
         name="Getstart"
@@ -153,8 +153,21 @@ function App() {
       },
       headerBackTitle: 'Quay lại',
     }}/>
-    </Stack.Navigator>
-
+    <Stack.Screen name="Payment" component={PaymentScreen}
+    options={{
+      title: 'Thanh toán',
+      headerStyle: {
+        backgroundColor: '#fff', // Màu nền thanh tiêu đề
+      },
+      headerTintColor: '#000', // Màu sắc cho nút quay lại và tiêu đề
+      headerTitleStyle: {
+        fontWeight: 'bold',
+        color: '#000', // Màu chữ tiêu đề
+      },
+      headerBackTitle: 'Quay lại',
+     }} />
+    <Stack.Screen name="Success" component={SuccessScreen} />
+    </Stack.Navigator>   
   );
 }
 

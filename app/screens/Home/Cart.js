@@ -1,88 +1,139 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { StyleSheet, Text, View, FlatList, Image, Button, TouchableOpacity } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { dataProvider } from '../../api/DataProvide';
+import { API_BASE_URL } from '@env';
+import axios from "axios";
+const Carts = ({ navigation }) => {
+  const [cartItems, setCartItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [emailId, setEmailId] = useState('');
+  const [cartId, setCartId] = useState('');
+  
+  useEffect(() => {
+    const fetchCartData = async () => {
+      try {
+        const storedEmailId = await AsyncStorage.getItem('emailId');
+        const storedCartId = await AsyncStorage.getItem('cartId');
+        console.log("Stored Email ID:", storedEmailId);
+        console.log("Stored Cart ID:", storedCartId);
 
-// Dữ liệu sản phẩm (giả sử bạn đã có sản phẩm trong giỏ hàng)
-const initialCart = [
-  {
-    id: '01',
-    name: 'Laptop MSI Gaming Stealth 16 Mercedes',
-    image: require('../../../assets/images/p2.png'),
-    quantity: 1,
-    price: 67990000,
-  },
-  {
-    id: '02',
-    name: 'Laptop Lenovo Gaming Legion 9',
-    image: require('../../../assets/images/p3.png'),
-    quantity: 1,
-    price: 135990000,
-  },
-  {
-    id: '03',
-    name: 'Laptop Acer Nitro 5 Tiger Gaming',
-    image: require('../../../assets/images/3.jpg'),
-    quantity: 2,
-    price: 20990000,
-  },
-];
 
-const Carts = ({navigation}) => {
-  const [cartItems, setCartItems] = useState(initialCart);
+        if (!storedEmailId || !storedCartId) {
+          console.error("No emailId or cartId found in AsyncStorage");
+          return; 
+        }
 
-  // Hàm tính tổng tiền giỏ hàng
+        setEmailId(storedEmailId);
+        setCartId(storedCartId);
+
+        const jwtToken = await AsyncStorage.getItem("jwt-token");
+        if (!jwtToken) {
+          // console.error("No JWT token found");
+          return;
+        }
+        
+        const cartData = await dataProvider.getCartById(storedEmailId, storedCartId);
+        
+        setCartItems(cartData.products || []);
+        
+      } catch (error) {
+        // console.error("Error fetching cart data:", error.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCartData();
+  }, []); // Chạy khi component mount
+
   const calculateTotal = () => {
-    return cartItems.reduce((total, item) => total + item.price * item.quantity, 0);
+    return cartItems.reduce((total, item) => total + item.specialPrice * item.quantity, 0);
   };
 
-  // Hàm để tăng số lượng sản phẩm
-  const increaseQuantity = (id) => {
-    setCartItems((prevCartItems) =>
-      prevCartItems.map((item) =>
-        item.id === id ? { ...item, quantity: item.quantity + 1 } : item
-      )
-    );
-  };
+  const increaseQuantity = async (id) => {
+    const item = cartItems.find((item) => item.productId === id);
+    if (!item) return;
 
-  // Hàm để giảm số lượng sản phẩm
-  const decreaseQuantity = (id) => {
-    setCartItems((prevCartItems) =>
-      prevCartItems.map((item) =>
-        item.id === id && item.quantity > 1
-          ? { ...item, quantity: item.quantity - 1 }
-          : item
-      )
-    );
-  };
+    try {
+        const updatedCart = await dataProvider.updateCartQuantity(cartId, id, item.quantity + 1);
+        setCartItems(updatedCart.products || []);
+    } catch (error) {
+        console.error("Lỗi khi tăng số lượng:", error.message);
+    }
+};
 
-  // Hàm xóa sản phẩm khỏi giỏ hàng
-  const removeItem = (id) => {
-    setCartItems((prevCartItems) =>
-      prevCartItems.filter((item) => item.id !== id)
-    );
-  };
+const decreaseQuantity = async (id) => {
+    const item = cartItems.find((item) => item.productId === id);
+    if (!item || item.quantity <= 1) return; // Không giảm nếu số lượng <= 1
 
-  const renderCartItem = ({ item }) => (
-    <View style={styles.cartItem}>
-      <Image source={item.image} style={styles.productImage} />
-      <View style={styles.productDetails}>
-        <Text style={styles.productName}>{item.name}</Text>
-        <Text>Giá: {(item.price * item.quantity).toLocaleString()}₫</Text>
+    try {
+        const updatedCart = await dataProvider.updateCartQuantity(cartId, id, item.quantity - 1);
+        setCartItems(updatedCart.products || []);
+    } catch (error) {
+        console.error("Lỗi khi giảm số lượng:", error.message);
+    }
+};
 
-        <View style={styles.quantityContainer}>
-          <TouchableOpacity onPress={() => decreaseQuantity(item.id)} style={styles.quantityButton}>
-            <Text style={styles.buttonText}>-</Text>
-          </TouchableOpacity>
-          <Text style={styles.quantityText}>{item.quantity}</Text>
-          <TouchableOpacity onPress={() => increaseQuantity(item.id)} style={styles.quantityButton}>
-            <Text style={styles.buttonText}>+</Text>
-          </TouchableOpacity>
-        </View>
+const deleteProductFromCart = async (productId) => {
+  try {
+      const jwtToken = await AsyncStorage.getItem("jwt-token");
+      if (!jwtToken) {
+          console.error("Token không hợp lệ hoặc đã hết hạn. Yêu cầu người dùng đăng nhập lại.");
+          navigation.navigate("Login"); // Chuyển hướng đến màn hình đăng nhập
+          return;
+      }
+      
+      console.log(`Attempting to remove product ${productId} from cart ${cartId}`);
+      await dataProvider.deleteProductFromCart(cartId, productId);
+      fetchCartData(); // Cập nhật lại giỏ hàng sau khi xóa
+  } catch (error) {
+      console.error("Lỗi khi xóa sản phẩm:", error.message);
+  }
+};
+const handlePayment = async () => {
+  try {
+    const emailId = await AsyncStorage.getItem('emailId');
+    const cartId = await AsyncStorage.getItem('cartId');
+
+    // Kiểm tra emailId và cartId có tồn tại không
+    if (!emailId || !cartId) {
+      Alert.alert("Thông báo", "Không tìm thấy thông tin giỏ hàng.");
+      return;
+    }
+
+    // Chuyển hướng tới màn hình thanh toán với thông tin cần thiết
+    navigation.navigate('Payment', { emailId, cartId });
+  } catch (error) {
+    console.error("Lỗi khi chuyển hướng đến màn hình thanh toán:", error);
+    Alert.alert("Lỗi", "Đã xảy ra lỗi trong quá trình chuyển hướng.");
+  }
+};
+const renderCartItem = ({ item }) => (
+  <View style={styles.cartItem}>
+    <Image source={{ uri: `${API_BASE_URL}/public/products/image/${item.image}` }} style={styles.productImage} />
+    <View style={styles.productDetails}>
+      <Text style={styles.productName}>{item.productName}</Text>
+      <Text>Giá: {(item.specialPrice * item.quantity).toLocaleString()}₫</Text>
+      <View style={styles.quantityContainer}>
+        <TouchableOpacity onPress={() => decreaseQuantity(item.productId)} style={styles.quantityButton}>
+          <Text style={styles.buttonText}>-</Text>
+        </TouchableOpacity>
+        <Text style={styles.quantityText}>{item.quantity}</Text>
+        <TouchableOpacity onPress={() => increaseQuantity(item.productId)} style={styles.quantityButton}>
+          <Text style={styles.buttonText}>+</Text>
+        </TouchableOpacity>
       </View>
-      <TouchableOpacity onPress={() => removeItem(item.id)} style={styles.deleteButton}>
+    </View>
+    <TouchableOpacity onPress={() => deleteProductFromCart(item.productId)} style={styles.deleteButton}>
         <Text style={styles.deleteText}>Xóa</Text>
       </TouchableOpacity>
-    </View>
-  );
+  </View>
+);
+
+  if (loading) {
+    return <Text>Đang tải giỏ hàng...</Text>;
+  }
 
   return (
     <View style={styles.container}>
@@ -94,7 +145,7 @@ const Carts = ({navigation}) => {
       />
       <View style={styles.totalContainer}>
         <Text style={styles.totalText}>Tổng cộng: {calculateTotal().toLocaleString()}₫</Text>
-        <Button title="Thanh toán" onPress={() => navigation.navigate('Payment')} />
+        <Button title="Thanh toán" onPress={(handlePayment) => navigation.navigate('Payment')} />
       </View>
     </View>
   );
@@ -119,7 +170,7 @@ const styles = StyleSheet.create({
     padding: 10,
     backgroundColor: '#f9f9f9',
     borderRadius: 10,
-    alignItems: 'center', 
+    alignItems: 'center',
   },
   productImage: {
     width: 80,

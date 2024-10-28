@@ -2,8 +2,8 @@ import * as React  from 'react';
 import { View, useWindowDimensions, Text, StyleSheet, TextInput, Button, Image, Picker,FlatList,ScrollView ,Alert} from 'react-native';
 import { TabView, SceneMap } from 'react-native-tab-view';
 import { useNavigation } from '@react-navigation/native';
-import { color } from '../SanPham/ListSanPham';
-import SanPham from '../SanPham/SanPhamLienQuan';
+import SanPham from '../SanPham/SanPham';import { color } from '../SanPham/ListSanPham';
+
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { authProvider } from '../../api/AuthProvide'; 
@@ -205,7 +205,7 @@ const SecondRoute = () => (
   <View style={{ flex: 1, backgroundColor: '#fff' }}>
     <View style={{ marginTop: 10 }}>
           <Text style={{ fontSize: 22, fontWeight: 'bold' }}>Đã xem gần đây</Text>
-          <SanPham />
+          {/* <SanPham /> */}
         </View>
         <View style={{ marginTop: 20 }}>
       <Text style={{ fontSize: 22, fontWeight: 'bold',padding: 5 }}>Thông báo</Text>

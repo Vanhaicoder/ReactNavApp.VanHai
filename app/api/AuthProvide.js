@@ -10,13 +10,13 @@ export const authProvider = {
                 password: password,
             }, {
                 headers: { 'Content-Type': 'application/json' },
-                withCredentials: false
+                withCredentials: false,
             });
 
             const token = response.data["jwt-token"];
             await AsyncStorage.setItem("jwt-token", token);
             await AsyncStorage.setItem("username", username);
-            
+            await AsyncStorage.setItem("emailId", username);
             // Gọi API lấy thông tin người dùng
             const userResponse = await axios.get(`${API_BASE_URL}/public/users/email/${username}`, {
                 headers: {

@@ -29,7 +29,7 @@ const SanPham = ({ selectedCategory }) => {
         setTotalPages(data.totalPages); 
       } catch (err) {
         console.error("Error fetching products:", err);
-        setError(err.message);
+        // setError(err.message);
       } finally {
         setLoading(false);
       }
