@@ -10,7 +10,7 @@ export const authProvider = {
                 password: password,
             }, {
                 headers: { 'Content-Type': 'application/json' },
-                withCredentials: false,
+                withCredentials: true,
             });
 
             const token = response.data["jwt-token"];
@@ -26,7 +26,7 @@ export const authProvider = {
 
             // Lưu thông tin user vào AsyncStorage
             const userInfo = userResponse.data; 
-            await AsyncStorage.setItem("userInfo", JSON.stringify(userInfo)); // lưu thông tin user
+            await AsyncStorage.setItem("userInfo", JSON.stringify(userInfo)); 
             
             if (userInfo.address) {
                 await AsyncStorage.setItem("address", JSON.stringify(userInfo.address));

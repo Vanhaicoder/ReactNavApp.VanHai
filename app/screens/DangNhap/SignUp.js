@@ -6,7 +6,7 @@ import styles from './signUp.style';
 import { API_BASE_URL } from '@env';
 import RNPickerSelect from 'react-native-picker-select'; // Thêm import cho picker
 import { QuocGia,ThanhPho,Tinh } from '../DanhMuc/map';
-// Danh sách tỉnh, thành phố và quốc gia
+
 
 const SignUp = ({ navigation }) => {
   const [username, setUsername] = useState('');

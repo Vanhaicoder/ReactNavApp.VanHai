@@ -9,7 +9,7 @@ import { API_BASE_URL } from '@env';
 const { width } = Dimensions.get('window');
 const ITEM_WIDTH = (width / 2) - 20;
 
-const SanPham = ({ selectedCategory }) => {
+const SanPham = ({ selectedCategory ,searchTerm }) => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -29,7 +29,7 @@ const SanPham = ({ selectedCategory }) => {
         setTotalPages(data.totalPages); 
       } catch (err) {
         console.error("Error fetching products:", err);
-        // setError(err.message);
+      //   // setError(err.message);
       } finally {
         setLoading(false);
       }
@@ -71,7 +71,7 @@ const SanPham = ({ selectedCategory }) => {
             <Image
               source={{ uri: `${API_BASE_URL}/public/products/image/${item.image}` }}
               style={styles.image}
-              onError={() => setError("Không thể tải hình ảnh")}
+              // onError={() => setError("Không thể tải hình ảnh")}
             />
             <Text style={styles.productName}>{item.productName}</Text>
             <View style={styles.ratingContainer}>

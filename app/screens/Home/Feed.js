@@ -12,21 +12,24 @@ const Feed = ({ navigation }) => {
   const [lastName, setLastName] = useState('');
   const [firstName, setFirstName] = useState('');
   const [refreshing, setRefreshing] = useState(false);
-  const [loading, setLoading] = useState(true); // Thêm trạng thái loading
+  const [loading, setLoading] = useState(true); 
   const [selectedCategory, setSelectedCategory] = useState(null);
 
   const fetchUserInfo = async () => {
+    
     try {
+      
       const userInfo = await AsyncStorage.getItem("userInfo");
       if (userInfo) {
         const user = JSON.parse(userInfo);
-        setLastName(user.lastName || 'Người dùng'); // Kiểm tra lastName
+        setLastName(user.lastName || 'Người dùng'); 
         setFirstName(user.firstName || 'Người dùng')
       }
+      
     } catch (error) {
       console.error("Lỗi khi lấy thông tin người dùng:", error);
     } finally {
-      setLoading(false); // Đặt loading về false sau khi hoàn tất
+      setLoading(false); 
     }
   };
 
@@ -57,7 +60,7 @@ const Feed = ({ navigation }) => {
       <SafeAreaView style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
         <ActivityIndicator size="large" color="#0000ff" />
       </SafeAreaView>
-    ); // Hiển thị chỉ báo tải khi đang tải dữ liệu
+    ); 
   }
 
   return (

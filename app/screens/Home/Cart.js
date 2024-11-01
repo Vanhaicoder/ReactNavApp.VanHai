@@ -1,51 +1,55 @@
-import React, { useEffect, useState } from 'react';
-import { StyleSheet, Text, View, FlatList, Image, Button, TouchableOpacity } from 'react-native';
+import React, { useEffect, useState, useCallback,useContext } from 'react';
+import { StyleSheet, Text, View, FlatList, Image, Button, TouchableOpacity, Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useFocusEffect } from '@react-navigation/native';
 import { dataProvider } from '../../api/DataProvide';
 import { API_BASE_URL } from '@env';
-import axios from "axios";
+import { CartContext } from './CartContext';
+
 const Carts = ({ navigation }) => {
   const [cartItems, setCartItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [emailId, setEmailId] = useState('');
   const [cartId, setCartId] = useState('');
-  
-  useEffect(() => {
-    const fetchCartData = async () => {
-      try {
-        const storedEmailId = await AsyncStorage.getItem('emailId');
-        const storedCartId = await AsyncStorage.getItem('cartId');
-        console.log("Stored Email ID:", storedEmailId);
-        console.log("Stored Cart ID:", storedCartId);
+  const { setProductCount } = useContext(CartContext);
 
 
-        if (!storedEmailId || !storedCartId) {
-          console.error("No emailId or cartId found in AsyncStorage");
-          return; 
-        }
+  const fetchCartData = async () => {
+    try {
+      const storedEmailId = await AsyncStorage.getItem('emailId');
+      const storedCartId = await AsyncStorage.getItem('cartId');
 
-        setEmailId(storedEmailId);
-        setCartId(storedCartId);
-
-        const jwtToken = await AsyncStorage.getItem("jwt-token");
-        if (!jwtToken) {
-          // console.error("No JWT token found");
-          return;
-        }
-        
-        const cartData = await dataProvider.getCartById(storedEmailId, storedCartId);
-        
-        setCartItems(cartData.products || []);
-        
-      } catch (error) {
-        // console.error("Error fetching cart data:", error.message);
-      } finally {
-        setLoading(false);
+      if (!storedEmailId || !storedCartId) {
+        console.error("No emailId or cartId found in AsyncStorage");
+        return;
       }
-    };
 
-    fetchCartData();
-  }, []); // Chạy khi component mount
+      setEmailId(storedEmailId);
+      setCartId(storedCartId);
+
+      const jwtToken = await AsyncStorage.getItem("jwt-token");
+      if (!jwtToken) {
+        console.error("No JWT token found");
+        return;
+      }
+
+      const cartData = await dataProvider.getCartById(storedEmailId, storedCartId);
+      setCartItems(cartData.products || []);
+    } catch (error) {
+      console.error("Error fetching cart data:", error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+  useEffect(() => {
+    setProductCount(cartItems.length); // Đếm số sản phẩm duy nhất
+  }, [cartItems]);
+  
+  useFocusEffect(
+    useCallback(() => {
+      fetchCartData();
+    }, [])
+  );
 
   const calculateTotal = () => {
     return cartItems.reduce((total, item) => total + item.specialPrice * item.quantity, 0);
@@ -65,7 +69,7 @@ const Carts = ({ navigation }) => {
 
 const decreaseQuantity = async (id) => {
     const item = cartItems.find((item) => item.productId === id);
-    if (!item || item.quantity <= 1) return; // Không giảm nếu số lượng <= 1
+    if (!item || item.quantity <= 1) return; 
 
     try {
         const updatedCart = await dataProvider.updateCartQuantity(cartId, id, item.quantity - 1);
@@ -74,35 +78,43 @@ const decreaseQuantity = async (id) => {
         console.error("Lỗi khi giảm số lượng:", error.message);
     }
 };
-
 const deleteProductFromCart = async (productId) => {
-  try {
-      const jwtToken = await AsyncStorage.getItem("jwt-token");
-      if (!jwtToken) {
-          console.error("Token không hợp lệ hoặc đã hết hạn. Yêu cầu người dùng đăng nhập lại.");
-          navigation.navigate("Login"); // Chuyển hướng đến màn hình đăng nhập
-          return;
+  Alert.alert(
+    "Xác nhận",
+    "Bạn có chắc chắn muốn xóa sản phẩm này khỏi giỏ hàng?",
+    [
+      {
+        text: "Hủy",
+        style: "cancel"
+      },
+      {
+        text: "Xóa",
+        onPress: async () => {
+          try {
+            console.log(`Attempting to remove product ${productId} from cart ${cartId}`);
+            await dataProvider.deleteProductFromCart(cartId, productId);
+            fetchCartData(); 
+          } catch (error) {
+            console.error("Lỗi khi xóa sản phẩm:", error.message);
+            Alert.alert("Lỗi", "Đã xảy ra lỗi khi xóa sản phẩm. Vui lòng thử lại.");
+          }
+        }
       }
-      
-      console.log(`Attempting to remove product ${productId} from cart ${cartId}`);
-      await dataProvider.deleteProductFromCart(cartId, productId);
-      fetchCartData(); // Cập nhật lại giỏ hàng sau khi xóa
-  } catch (error) {
-      console.error("Lỗi khi xóa sản phẩm:", error.message);
-  }
+    ]
+  );
 };
 const handlePayment = async () => {
   try {
     const emailId = await AsyncStorage.getItem('emailId');
     const cartId = await AsyncStorage.getItem('cartId');
 
-    // Kiểm tra emailId và cartId có tồn tại không
+    
     if (!emailId || !cartId) {
       Alert.alert("Thông báo", "Không tìm thấy thông tin giỏ hàng.");
       return;
     }
 
-    // Chuyển hướng tới màn hình thanh toán với thông tin cần thiết
+    
     navigation.navigate('Payment', { emailId, cartId });
   } catch (error) {
     console.error("Lỗi khi chuyển hướng đến màn hình thanh toán:", error);
@@ -111,7 +123,9 @@ const handlePayment = async () => {
 };
 const renderCartItem = ({ item }) => (
   <View style={styles.cartItem}>
-    <Image source={{ uri: `${API_BASE_URL}/public/products/image/${item.image}` }} style={styles.productImage} />
+    <Image source={{ uri: `${API_BASE_URL}/public/products/image/${item.image}` }} style={styles.productImage} 
+
+  />
     <View style={styles.productDetails}>
       <Text style={styles.productName}>{item.productName}</Text>
       <Text>Giá: {(item.specialPrice * item.quantity).toLocaleString()}₫</Text>
@@ -141,11 +155,11 @@ const renderCartItem = ({ item }) => (
       <FlatList
         data={cartItems}
         renderItem={renderCartItem}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item) => item.productId}
       />
       <View style={styles.totalContainer}>
         <Text style={styles.totalText}>Tổng cộng: {calculateTotal().toLocaleString()}₫</Text>
-        <Button title="Thanh toán" onPress={(handlePayment) => navigation.navigate('Payment')} />
+        <Button title="Thanh toán" onPress={(handlePayment)} />
       </View>
     </View>
   );

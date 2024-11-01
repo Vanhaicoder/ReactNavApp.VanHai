@@ -13,13 +13,19 @@ const DetailSanPham = ({ route,navigation }) => {
   const [quantity, setQuantity] = useState(1);
   const [relatedProducts, setRelatedProducts] = useState([]);
 
-  if (!sanPham) {
-    return (
-      <View style={styles.container}>
-        <Text>Không tìm thấy sản phẩm.</Text>
-      </View>
-    );
-  }
+  // if (!sanPham) {
+  //   return (
+  //     <View style={styles.container}>
+  //       <Text>Không tìm thấy sản phẩm.</Text>
+  //     </View>
+  //   );
+  // }
+  // useEffect(() => {
+  //   // Lấy sản phẩm liên quan khi sản phẩm hiện tại thay đổi
+  //   if (sanPham && sanPham.categoryId) {
+  //     fetchRelatedProducts(sanPham.categoryId);
+  //   }
+  // }, [sanPham]);
   
   const handleAddToCart = async () => {
     try {
@@ -39,7 +45,14 @@ const DetailSanPham = ({ route,navigation }) => {
     }
   };
 
-  
+  const fetchRelatedProducts = async (categoryId) => {
+    try {
+      const data = await dataProvider.getProductsByCategory(categoryId);
+      setRelatedProducts(data.content); 
+    } catch (error) {
+      console.error("Không thể lấy sản phẩm tương tự:", error);
+    }
+  };
   const formatPrice = (price) => {
     return price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".") + " VND";
   };
@@ -143,7 +156,7 @@ const DetailSanPham = ({ route,navigation }) => {
       content: (
         <View style={{ marginTop: 10 }}>
           <Text style={{ fontSize: 22, fontWeight: 'bold' }}>Sản phẩm tương tự</Text>
-          {/* <SanPham/> */}
+          
         </View>
       )
     }
@@ -157,6 +170,7 @@ const DetailSanPham = ({ route,navigation }) => {
         keyExtractor={(item) => item.key}
         contentContainerStyle={styles.contentContainer}
       />
+      
       <View style={styles.fixedButtonContainer}>
       <TouchableOpacity style={styles.addButton} onPress={() => handleAddToCart()}>
     <Text style={styles.addButtonText}>Thêm vào giỏ hàng</Text>
@@ -178,10 +192,10 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   image: {
-    width: '100%', // Đặt chiều rộng bằng 100% của container
-    height: 300, // Đặt chiều cao cố định là 300
-    borderRadius: 10, // Bo tròn các góc
-    marginBottom: 20, // Khoảng cách dưới ảnh
+    width: '100%', 
+    height: 300, 
+    borderRadius: 10, 
+    marginBottom: 20, 
     resizeMode: 'contain',
   },
   title: {

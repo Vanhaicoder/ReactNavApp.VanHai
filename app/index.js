@@ -2,7 +2,7 @@ import 'react-native-gesture-handler';
 
 import * as React from 'react';
 import { Button, View, Text } from 'react-native';
-// import { CartProvider } from './screens/Home/CartContext';
+import { CartProvider } from './screens/Home/CartContext';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import SignUp from './screens/DangNhap/SignUp';
@@ -26,6 +26,7 @@ const Stack = createStackNavigator();
 
 function App() {
   return (
+    <CartProvider>
     <Stack.Navigator initialRouteName="Getstart">
       <Stack.Screen
         name="Getstart"
@@ -167,7 +168,8 @@ function App() {
       headerBackTitle: 'Quay lại',
      }} />
     <Stack.Screen name="Success" component={SuccessScreen} />
-    </Stack.Navigator>   
+    </Stack.Navigator> 
+    </CartProvider>  
   );
 }
 
